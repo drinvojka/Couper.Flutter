@@ -1,6 +1,8 @@
+import 'package:couper/Screens/home/home.dart';
 import 'package:couper/Screens/login&registration/login.dart';
 import 'package:couper/widgets/fade_page_route.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'configs/AppColors.dart';
 
@@ -11,11 +13,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      color: Colors.white,
+      color: Colors.grey[200],
       title: 'Couper',
       theme: ThemeData(
-        textTheme: Theme.of(context).textTheme.apply(displayColor: AppColors.black),
-        scaffoldBackgroundColor: AppColors.lightGrey,
+        textTheme:
+            Theme.of(context).textTheme.apply(displayColor: AppColors.black),
+        scaffoldBackgroundColor: Colors.grey[200],
         primarySwatch: Colors.blue,
       ),
       onGenerateRoute: _getRoute,
@@ -23,12 +26,16 @@ class MyApp extends StatelessWidget {
   }
 
   Route _getRoute(RouteSettings settings) {
+ 
     switch (settings.name) {
       case "/":
-        return FadeRoute(page: Login());
-
+        return FadeRoute(page: Home());
+      case "/Home":
+        return FadeRoute(page: Home());
       default:
         return null;
     }
   }
+
+ 
 }

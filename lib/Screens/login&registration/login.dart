@@ -1,11 +1,8 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:couper/Models/UserLoggedDto.dart';
-import 'package:couper/Models/UserLoginDto.dart';
 import 'package:couper/configs/APIEndpoints.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
   Login({Key key}) : super(key: key);
@@ -31,26 +28,31 @@ class _LoginState extends State<Login> {
 
   static Dio dio = Dio(options);
 
-  Future<dynamic> _loginUser(String username , String password) async {
+  Future<dynamic> _loginUser(String username, String password) async {
     try {
-        Options options = Options(
-          contentType: Headers.jsonContentType,
-        );
+      Options options = Options(
+        contentType: Headers.jsonContentType,
+      );
 
-      Response response =
-          await dio.post(APIEndpoints.loginApi, data: {"username":username,"password":password},options:options);
+      Response response = await dio.post(APIEndpoints.loginApi,
+          data: {"username": username, "password": password}, options: options);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         var responseJson = UserLoggedDto.fromJson(response.data);
         return responseJson;
-      } else if (response.statusCode == 401) {
-      } 
+      } else if (response.statusCode == 401) {}
     } on DioError catch (exception) {
       if (exception == null ||
           exception.toString().contains('SocketException')) {
+        setState(() {
+          _isLoading = false;
+        });
         throw Exception("Network Error");
       } else if (exception.type == DioErrorType.RECEIVE_TIMEOUT ||
           exception.type == DioErrorType.CONNECT_TIMEOUT) {
+        setState(() {
+          _isLoading = false;
+        });
         throw Exception(
             "Could'nt connect, please ensure you have a stable network.");
       } else {
@@ -61,19 +63,23 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
+    return WillPopScope(
+      onWillPop: () async => false,
+          child: Scaffold(
+        body: Center(
+            child: Container(
           child: _isLoading
               ? CircularProgressIndicator()
               : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Padding(
                         padding: EdgeInsets.all(12.0),
                         child: TextField(
-                        
                           controller: _emailController,
-                          decoration: InputDecoration(hintText: 'Username' , ),
+                          decoration: InputDecoration(
+                            hintText: 'Username',
+                          ),
                         )),
                     Padding(
                         padding: EdgeInsets.all(12.0),
@@ -87,20 +93,29 @@ class _LoginState extends State<Login> {
                         child: RaisedButton(
                             onPressed: () async {
                               setState(() {
-                               _isLoading = true; 
+                                _isLoading = true;
                               });
-
-                              var res = await  _loginUser(_emailController.text , _passwordController.text);
+                              var res = await _loginUser(_emailController.text,
+                                  _passwordController.text);
                               setState(() {
-                               _isLoading = false; 
+                                _isLoading = false;
                               });
-                              if(res!=null){
-                                print(res);
+                              if (res != null) {
+                                _saveTokenToPreferences(
+                                    (res as UserLoggedDto).token);
+                                Navigator.pushNamed(context, '/Home');
                               }
                             },
                             child: Text('Login')))
                   ],
-                )),
+                ),
+        )),
+      ),
     );
+  }
+
+  void _saveTokenToPreferences(String token) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
   }
 }

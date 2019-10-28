@@ -1,3 +1,6 @@
+import 'package:couper/Screens/checkout/checkout.dart';
+import 'package:couper/Screens/deals/specials.dart';
+import 'package:couper/Screens/profile/profile.dart';
 import 'package:couper/Screens/store/store.dart';
 import 'package:couper/configs/AppColors.dart';
 import 'package:couper/widgets/bottom_app_bar.dart';
@@ -12,16 +15,28 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  
-  
   void _selectedTab(int index) {
+    print(index);
     setState(() {
-       Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => Store()),
-          // MaterialPageRoute(builder: (context) => ProductDetail2())
-
-        );
+      switch (index) {
+        case 0:
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Checkout()),
+          );
+          break;
+        case 1: 
+          Navigator.push(context , MaterialPageRoute(builder: (context) => Store()));
+          break;
+        case 2:
+          Navigator.push(context , MaterialPageRoute(builder: (context) => Profile()));
+          break;
+           case 3:
+          Navigator.push(context , MaterialPageRoute(builder: (context) => Specials()));
+          break;
+          
+        
+      }
     });
   }
 
@@ -243,13 +258,10 @@ class _HomeState extends State<Home> {
           child: SafeArea(
               top: true,
               child: Container(
-                child: SearchBar(hint :'Kerko produkte ...'),
+                child: SearchBar(hint: 'Kerko produkte ...'),
                 decoration: BoxDecoration(boxShadow: [
                   BoxShadow(
-                    color: Colors.grey,
-                    blurRadius: 20.0,
-                    spreadRadius: 0.0
-                  )
+                      color: Colors.grey, blurRadius: 20.0, spreadRadius: 0.0)
                 ]),
               )),
         )

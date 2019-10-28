@@ -14,19 +14,33 @@ class Store extends StatefulWidget {
 }
 
 class _StoreState extends State<Store> {
+  GoogleMapController mapController ;
   Completer<GoogleMapController> _controller = Completer();
   final Map<String, Marker> _markers = {};
   static const LatLng _center = const LatLng(42.662220, 21.157846);
-
+  GlobalKey _slidePanelSizeKey = GlobalKey();
+  Size _slidePanelSize = Size(0, 0);
   bool hasStores = false;
-  void _onMapCreated(GoogleMapController controller) {
-    _controller.complete(controller);
-  }
+  
 
   @override
   void initState() {
     hasStores = false;
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(_onBuildCompleted);
+  }
+
+  _onBuildCompleted(_) {
+    _getSlidePanelSize();
+  }
+
+  _getSlidePanelSize() {
+    final RenderBox slideRenderBox =
+        _slidePanelSizeKey.currentContext.findRenderObject();
+    final slidePanelSize = slideRenderBox.size;
+    setState(() {
+      _slidePanelSize = slidePanelSize;
+    });
   }
 
   @override
@@ -37,12 +51,15 @@ class _StoreState extends State<Store> {
         children: <Widget>[
           Scaffold(
             body: GoogleMap(
-                initialCameraPosition: CameraPosition(
+
+                  initialCameraPosition: CameraPosition(
                   target: _center,
                   zoom: 5,
                 ),
                 markers: _markers.values.toSet(),
-                onMapCreated: _onMapCreated),
+                onMapCreated: (GoogleMapController controller){
+                  mapController = controller;
+                }),
           ),
           SafeArea(
             top: false,
@@ -79,7 +96,7 @@ class _StoreState extends State<Store> {
                             SizedBox(
                               height: 5,
                             ),
-                            Text('Lidl Stores',
+                            Text('Emona Markets',
                                 style: TextStyle(
                                     fontSize: 30, fontWeight: FontWeight.bold)),
                           ],
@@ -93,11 +110,24 @@ class _StoreState extends State<Store> {
                   ),
                 ),
                 SlidingUpPanel(
+                    key: _slidePanelSizeKey,
                     minHeight: 200,
                     borderRadius: BorderRadius.only(
                         topRight: Radius.circular(12.0),
                         topLeft: Radius.circular(12.0)),
-                    panel: _buildResults(bloc)),
+                    panel: Column(
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 15.0, bottom: 10),
+                          child: Container(
+                            width: 30,
+                            height: 3,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Expanded(child: _buildResults(bloc))
+                      ],
+                    )),
               ],
             ),
           )
@@ -137,7 +167,7 @@ class _StoreState extends State<Store> {
               ),
               Row(
                 children: <Widget>[
-                  Text('set store',
+                  Text('zgjidh lokacion',
                       style: TextStyle(color: Colors.blue, fontSize: 18)),
                   SizedBox(
                     width: 5,
@@ -157,25 +187,37 @@ class _StoreState extends State<Store> {
         stream: bloc.locationStream,
         builder: (context, snapshot) {
           final results = snapshot.data;
+          if (snapshot.connectionState == ConnectionState.active &&
+              snapshot.data == null) {
+                
+            return CircularProgressIndicator();
+          }
           if (results == null) {
             _markers.clear();
             return _getNoStoreSelected();
-
           }
           if (results.isEmpty) {
-            return Center(child: Text('no results'));
+            return Center(child: Text('nuk ka resultate'));
           }
 
+        
+          
+
           _addMarkers(results);
-            
+
           return _buildSearchResults(results);
         });
   }
 
   Widget _buildSearchResults(List<StoreDto> results) {
     // 2
+      mapController.animateCamera(
+              CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(
+                results.first.longitude , results.first.latitude
+              ) , zoom:  20.0))
+            );
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.only(left: 8.0),
       child: ListView.separated(
         itemCount: results.length,
         separatorBuilder: (BuildContext context, int index) => Divider(),
@@ -199,12 +241,12 @@ class _StoreState extends State<Store> {
                     Text("${location.city} , ${location.zipCode}",
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.w200)),
-                    Text('open now 7am - 10pm',
+                    Text('hapur nga 7am - 10pm',
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                Text('set store',
+                Text('zgjidh dyqanin',
                     style: TextStyle(color: Colors.green, fontSize: 20))
               ],
             ),
@@ -215,18 +257,19 @@ class _StoreState extends State<Store> {
   }
 
   void _addMarkers(List<StoreDto> results) {
-   
-      _markers.clear();
-      for (final office in results) {
-        final marker = Marker(
-          markerId: MarkerId(office.storeId.toString()),
-          position: LatLng(office.longitude, office.latitude),
-          infoWindow: InfoWindow(
-            title: office.storeName,
-            snippet: office.address,
-          ),
-        );
-        _markers[office.storeName] = marker;
-      }
+    _markers.clear();
+    for (final office in results) {
+      final marker = Marker(
+        markerId: MarkerId(office.storeId.toString()),
+        position: LatLng(office.longitude, office.latitude),
+        infoWindow: InfoWindow(
+          title: office.storeName,
+          snippet: office.address,
+        ),
+      );
+      _markers[office.storeName] = marker;
+    }
   }
 }
+
+class _onBuildCompleted {}

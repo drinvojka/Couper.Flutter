@@ -13,7 +13,10 @@ class StoreQueryBloc implements Bloc {
   void submitQuery(String query) async {
     // 1
     final results = await _client.fetchStores(query);
-    _controller.sink.add(results);
+    if(results != null)
+    {
+        _controller.sink.add(results);
+    }
   }
 
   @override
